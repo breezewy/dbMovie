@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="http://at.alicdn.com/t/font_896502_ryjooqh02pn.css">
+    <script src="https://cdn.bootcss.com/jquery/2.1.0-rc1/jquery.min.js"></script>
+    <style>
+        *{
+            margin:0;
+            padding:0;
+          
+        }
+        a{
+            text-decoration: none;
+            color:#333;
+        }
+        html,body{
+            height:100%;
+        }
+        body{
+            font-size: 12px;
+            line-height: 1.5;
+            position: relative;
+        }
+        main{
+            height:calc(100vh - 50px);
+            overflow: scroll;
+            -webkit-overflow-scrolling: touch;
+        }
+        main>section{
+             display: none;
+        }
+        main>section:first-child{
+            display: block;
+        }
+        footer{
+            height:50px;
+            width:100%;
+            display: flex;
+            border-top:2px solid #666;
+            position: absolute;
+            bottom:0;
+        }
+        footer>div{
+            flex:1;
+            text-align:center;
+            cursor:pointer;
+        }
+        footer>div>span{
+            display: block;
+        }
+        .active{
+            color:indianred;
+        }
+        main .item{
+            border-bottom:1px solid #666;
+            padding:10px 10px;
+        }
+        .item a{
+            display: flex;
+        }
+        .cover img{
+            width:70px;
+        }
+        .details {
+            padding-left:5px;
+        }
+        .details h2{
+            font-size: 16px;
+        }
+        .details .score{
+            color:indianred;
+        }
+        .loading{
+            text-align: center;
+            padding:5px;
+            display: none;
+        }
+        .loading .iconfont{
+            display: inline-block;
+            animation: 1s rotate linear infinite;
+        }
+        @keyframes rotate{
+            0% {transform: rotate(0deg)}
+            100% {transform: rotate(360deg)}
+        }
+
+      
+    
+    </style>
+</head>
+<body>
+    <main>
+        <section>
+            <div class="top250">
+                <!-- <div class="item">
+                    <a href="#">
+                        <div class="cover">
+                            <img src="https://ss1.bdstatic.com/70cFuXSh_Q1YnxGkpoWK1HF6hhy/it/u=645001896,4263978051&fm=26&gp=0.jpg"
+                                alt="">
+                        </div>
+                        <div class="details">
+                            <h2>霸王别姬</h2>
+                            <div class="extra"><span class="score">9.6</span> / <span class="collect">9999</span>收藏</div>
+                            <div class="extra"><span class="year">1993 / </span><span class="type">恐怖/喜剧</span></div>
+                            <div class="extra">导演：<span class="dirctor">张艺谋</span></div>
+                            <div class="extra">主演：<span class=actor>成龙</span></div>
+                        </div>
+                    </a>
+                </div> -->
+            </div>
+            <div class="loading"><span class="iconfont icon-loading"></span></div>
+        </section>
+        <section>
+            2
+        </section>
+        <section>
+            3
+        </section>
+    </main>
+    <footer>
+        <div class="active"><span class="iconfont icon-top250"></span><span>Top250</span></div>
+        <div><span class="iconfont icon-us"></span><span>北美</span></div>
+        <div><span class="iconfont icon-search"></span><span>搜索</span></div>
+    </footer>
+
+    <script>
+        $('footer>div').on('click',function(){
+            $(this).addClass('active').siblings().removeClass('active');
+            $('main>section').hide().eq($(this).index()).fadeIn()
+        })
+        
+        var isLoading = false;
+        start();
+        function start(){
+            if(isLoading)return ;
+            isLoading = true;
+            $('.loading').show();
+            $.ajax({
+                url: 'http://api.douban.com/v2/movie/top250',
+                data: {
+                    start: 0,
+                    count: 20
+                },
+                dataType: 'jsonp'
+            }).done(function (ret) {
+                console.log(ret);
+                setData(ret);
+            }).fail(function () {
+                console.log('error');
+
+            }).always(function () {
+                console.log('完成了');
+                $('.loading').hide();
+                isLoading = false;
+            })
+        }
+        
+        var clock;
+        $('main').scroll(function(){
+           if(clock){
+               clearTimeout(clock);
+           }
+           clock = setTimeout(function(){
+                if ($('section').eq(0).height() - 20 <=  $('main').height() + $('main').scrollTop()) {
+                   start();
+                }
+           },300)
+        })
+
+        function setData(data){
+            data.subjects.forEach(function(movie){
+                 var str = `
+             <div class="item">
+                <a href="#">
+                    <div class="cover">
+                        <img src="" alt="">
+                    </div>
+                    <div class="details">
+                        <h2></h2>
+                        <div class="extra"><span class="score"></span> / <span class="collect"></span>收藏</div>
+                        <div class="extra"><span class="year"></span> / <span class="type"></span></div>
+                        <div class="extra">导演：<span class="director"></span></div>
+                        <div class="extra">主演：<span class=actor></span></div>
+                    </div>
+                </a>
+            </div>
+            `
+                var $node = $(str);
+                $node.find('.cover img').attr('src', movie.images.medium);
+                $node.find('.details h2').text(movie.title);
+                $node.find('.details .score').text(movie.rating.average);
+                $node.find('.details .collect').text(movie.collect_count);
+                $node.find('.details .year').text(movie.year);
+                $node.find('.details .type').text(movie.genres.join('/'));
+                $node.find('.director').text(function () {
+                    var directorArr = [];
+                    movie.directors.forEach(function (node) {
+                        directorArr.push(node.name);
+                    })
+                    return directorArr.join('、');
+                })
+                $node.find('.actor').text(function(){
+                    var actorArr = [];
+                    movie.casts.forEach(function(node){
+                        actorArr.push(node.name);
+                    })
+                    return actorArr.join('、')
+                })
+                 $('.top250').append($node);
+            })  
+        }
+    
+    </script>
+</body>
+</html>

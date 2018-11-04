@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>豆瓣电影</title>
+    <link rel="stylesheet" href="http://at.alicdn.com/t/font_896502_ryjooqh02pn.css">
+    <script src="https://cdn.bootcss.com/jquery/2.1.0-rc1/jquery.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        a {
+            text-decoration: none;
+            color: #333;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            font-size: 12px;
+            line-height: 1.2;
+            background-color: #fff;
+            position: relative;
+        }
+
+        main {
+            height: calc(100vh - 50px);
+        }
+
+        footer {
+            position: absolute;
+            bottom: 0;
+            height: 50px;
+            width: 100%;
+            display: flex;
+            border-top: 1px solid #ccc;
+        }
+
+        footer>div {
+            flex: 1;
+            text-align: center;
+        }
+
+        footer .active {
+            color: #ff5572;
+        }
+
+        footer>div>span {
+            display: block;
+            padding-top: 5px;
+        }
+
+        main>section {
+            display: none;
+            height:100%;
+            overflow: scroll;
+             /* 具有回弹效果的滚动，也就是说，当手指离开触摸屏，内容会继续保持一段时间的滚动*/
+            -webkit-overflow-scrolling: touch;
+        }
+
+        main>section:first-child {
+            display: block;
+        }
+
+        .item {
+            border-bottom: 1px solid #ccc;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+
+        .item>a {
+            display: block;
+            display: flex;
+        }
+
+        .item .cover,
+        .item img {
+            width: 70px;
+        }
+
+        .item .detail {
+            flex: 1;
+            padding-left: 10px;
+        }
+
+        .item .detail h2 {
+            font-size: 16px;
+        }
+
+        .item .detail .extra {
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .item .detail .score {
+            color: #ff5572;
+        }
+
+        .loading {
+            padding: 5px;
+            text-align: center;
+            display: none;
+        }
+
+        .loading .iconfont {
+            /* 使用动画的话，必须是块 */
+            display: inline-block;
+            animation: 1s rotate linear infinite;
+        }
+
+        /* 动画关键帧 */
+        @keyframes rotate {
+            0% {
+                transform: rotate(0deg)
+            }
+
+            100% {
+                transform: rotate(360deg)
+            }
+        }
+        #search {
+            padding:0 10px;
+        }
+        #search .search-area{
+            border-bottom:1px solid #ccc;
+            padding:10px;
+        }
+        .search-area input{
+            padding:8px;
+            width:93%;
+            vertical-align:top;
+            outline: none;
+            border:none;
+            background:#ccc;
+        }
+        .search-area .btn{
+            display: inline-block;
+            line-height: 29px;
+            width:50px;
+            text-align: center;
+            background:#ff5572;
+            box-shadow:0 1px 1px #000;
+            border-radius:2px;
+            color:#fff;
+            vertical-align:top;
+            margin-left:5px;
+            cursor:pointer;
+        }
+    </style>
+</head>
+
+<body>  
+    <!-- 
+        封装对象的方法
+
+     -->
+    <main>
+        <section id="top250">
+            <div class="container">
+                1
+                <!-- <div class="item">
+                        <a href="#">
+                            <div class="cover">
+                                <img src="https://ss0.bdstatic.com/70cFvHSh_Q1YnxGkpoWK1HF6hhy/it/u=4199764235,3986498099&fm=26&gp=0.jpg" alt="">
+                            </div>
+                            <div class="detail">
+                                <h2>霸王别姬</h2>
+                                <div class="extra"><span class="score">9.3分</span> /<span class="collect"></span>收藏</div>
+                                <div class="extra"><span class="year">1994</span> /<span class="type">剧情、爱情</span></div>
+                                <div class="extra">导演：<span class="director">张艺谋</span></div>
+                                <div class="extra">主演：<span class="actor">张艺谋、张艺谋、张艺谋</span></div>
+                            </div>
+                        </a>
+                    </div> -->
+            </div>
+            <div class="loading"><span class="iconfont icon-loading"></span></div>
+        </section>
+        <section id="beimei">
+            <div class="container">2</div>
+            <div class="loading"><span class="iconfont icon-loading"></span></div>
+        </section>
+        <section id="search">
+            <div class="search-area">
+                <input type="text" placeholder="搜索电影"><span class="btn">搜索</span>
+            </div>
+            <div class="search-result">
+                <div class="loading">
+                    <span class="iconfont icon-loading"></span>
+                </div>
+            </div>
+        </section>
+    </main>
+    <footer>
+        <div class="active"><span class="iconfont icon-top250"></span><span>Top250</span></div>
+        <div><span class="iconfont icon-us"></span><span>北美</span></div>
+        <div><span class="iconfont icon-search"></span>搜索<span></span></div>
+    </footer>
+
+    <script>
+      var top250 = {
+          init:function(){
+            this.$element = $('#top250');
+            this.isLoading = false;
+            this.index = 0;
+            this.isFinish = false;
+            this.bind();
+            this.start();
+          },
+          bind:function(){
+            var _this = this; 
+            this.$element.scroll(function(){
+                _this.start();
+            })
+          },
+          start:function(){
+              var _this = this;
+              this.getData(function(data){  
+                  _this.render(data);
+              })
+          },
+          getData:function(callback){
+              var _this = this;
+              if(_this.isLoading) return ;
+              _this.isLoading = true;
+              _this.$element.find('.loading').show();
+              $.ajax({
+                  url:'http://api.douban.com/v2/movie/top250',
+                  data:{
+                      start: this.index ||0
+                  },
+                  dataType:'jsonp'
+              }).done(function(ret){
+                //   console.log(ret);
+                  _this.index += 20;
+                  if(_this.index >= ret.total){
+                      _this.isFinish = true;
+                  }
+                  callback&&callback(ret)
+              }).fail(function(){
+                  console.log('数据异常')
+              }).always(function(){
+                  _this.isLoading = false;
+                  _this.$element.find('.loading').hide()
+              })
+          },
+          render:function(data){
+              var _this = this;
+              data.subjects.forEach(function(movie){
+                  var tpl = `<div class="item">
+                <a href="#">
+                    <div class="cover">
+                        <img src="" alt="">
+                    </div>
+                    <div class="detail">
+                        <h2></h2>
+                        <div class="extra"><span class="score"></span> /<span class="collect"></span>收藏</div>
+                        <div class="extra"><span class="year"></span> /<span class="type"></span></div>
+                        <div class="extra">导演：<span class="director"></span></div>
+                        <div class="extra">主演：<span class="actor"></span></div>
+                    </div>
+                </a>
+            </div>`
+                  var $node = $(tpl);
+                  $node.find('a').attr('href',movie.alt);
+                  $node.find('.cover img').attr('src', movie.images.medium);
+                  $node.find('.detail h2').text(movie.title);
+                  $node.find('.detail .score').text(movie.rating.average);
+                  $node.find('.collect').text(movie.collect_count);
+                  $node.find('.year').text(movie.year);
+                  $node.find('.type').text(movie.genres.join('/'));
+                  $node.find('.director').text(function () {
+                      var directorArr = [];
+                      movie.directors.forEach(function (item) {
+                          directorArr.push(item.name);
+                      })
+                      return directorArr.join('、');
+                  });
+                  $node.find('.actor').text(function () {
+                      var actorArr = [];
+                      movie.casts.forEach(function (item) {
+                          actorArr.push(item.name);
+                      })
+                      return actorArr.join('、');
+                  })
+                  _this.$element.find('.container').append($node)
+              });
+          }
+      }
+
+
+
+      var usBox = {
+            init: function () {
+                this.$element = $('#beimei');
+                this.start();
+            },
+             start: function () {
+              var _this = this;
+              this.getData(function (data) {
+                  _this.render(data);
+              })
+          },
+          getData: function (callback) {
+              var _this = this;
+              if (_this.isLoading) return;
+              _this.$element.find('.loading').show();
+              $.ajax({
+                  url: 'http://api.douban.com/v2/movie/us_box',
+                  dataType: 'jsonp'
+              }).done(function (ret) {
+                  callback && callback(ret)
+              }).fail(function () {
+                  console.log('数据异常')
+              }).always(function () {
+                  _this.$element.find('.loading').hide()
+              })
+          },
+          render: function (data) {
+              var _this = this;
+              console.log(data);
+              data.subjects.forEach(function (movie) {
+                  movie = movie.subject
+                  var tpl = `<div class="item">
+                <a href="#">
+                    <div class="cover">
+                        <img src="" alt="">
+                    </div>
+                    <div class="detail">
+                        <h2></h2>
+                        <div class="extra"><span class="score"></span> /<span class="collect"></span>收藏</div>
+                        <div class="extra"><span class="year"></span> /<span class="type"></span></div>
+                        <div class="extra">导演：<span class="director"></span></div>
+                        <div class="extra">主演：<span class="actor"></span></div>
+                    </div>
+                </a>
+            </div>`
+                  var $node = $(tpl);
+                  $node.find('a').attr('href', movie.alt);
+                  $node.find('.cover img').attr('src', movie.images.medium);
+                  $node.find('.detail h2').text(movie.title);
+                  $node.find('.detail .score').text(movie.rating.average);
+                  $node.find('.collect').text(movie.collect_count);
+                  $node.find('.year').text(movie.year);
+                  $node.find('.type').text(movie.genres.join('/'));
+                  $node.find('.director').text(function () {
+                      var directorArr = [];
+                      movie.directors.forEach(function (item) {
+                          directorArr.push(item.name);
+                      })
+                      return directorArr.join('、');
+                  });
+                  $node.find('.actor').text(function () {
+                      var actorArr = [];
+                      movie.casts.forEach(function (item) {
+                          actorArr.push(item.name);
+                      })
+                      return actorArr.join('、');
+                  })
+                  _this.$element.find('.container').append($node)
+              });
+          }
+        }
+
+    var search = {
+        init: function () {
+            this.$element = $('#search');
+            this.keyword = '';
+            this.bind();
+            this.start();
+        },
+        bind:function(){
+            var _this = this;
+            this.$element.find('.btn').on('click',function(){
+               _this.keyword =  _this.$element.find('input').val();
+               _this.start();
+            })
+        },
+        start: function () {
+            var _this = this;
+            this.getData(function (data) {
+                _this.render(data);
+            })
+        },
+        getData: function (callback) {
+            var _this = this;
+            _this.$element.find('.loading').show();
+            $.ajax({
+                url: 'http://api.douban.com/v2/movie/search',
+                data:{
+                    q:_this.keyword
+                },
+                dataType: 'jsonp'
+            }).done(function (ret) {
+                callback && callback(ret)
+            }).fail(function () {
+                console.log('数据异常')
+            }).always(function () {
+                _this.$element.find('.loading').hide()
+            })
+        },
+        render: function (data) {
+            var _this = this;
+            console.log(data);
+            data.subjects.forEach(function (movie) {
+                var tpl = `<div class="item">
+                <a href="#">
+                    <div class="cover">
+                        <img src="" alt="">
+                    </div>
+                    <div class="detail">
+                        <h2></h2>
+                        <div class="extra"><span class="score"></span> /<span class="collect"></span>收藏</div>
+                        <div class="extra"><span class="year"></span> /<span class="type"></span></div>
+                        <div class="extra">导演：<span class="director"></span></div>
+                        <div class="extra">主演：<span class="actor"></span></div>
+                    </div>
+                </a>
+            </div>`
+                var $node = $(tpl);
+                $node.find('a').attr('href', movie.alt);
+                $node.find('.cover img').attr('src', movie.images.medium);
+                $node.find('.detail h2').text(movie.title);
+                $node.find('.detail .score').text(movie.rating.average);
+                $node.find('.collect').text(movie.collect_count);
+                $node.find('.year').text(movie.year);
+                $node.find('.type').text(movie.genres.join('/'));
+                $node.find('.director').text(function () {
+                    var directorArr = [];
+                    movie.directors.forEach(function (item) {
+                        directorArr.push(item.name);
+                    })
+                    return directorArr.join('、');
+                });
+                $node.find('.actor').text(function () {
+                    var actorArr = [];
+                    movie.casts.forEach(function (item) {
+                        actorArr.push(item.name);
+                    })
+                    return actorArr.join('、');
+                })
+                _this.$element.find('.search-result').append($node)
+            });
+        }
+        }
+
+
+       var app = {
+        //  把一些初始化的东西，都放在init里
+         init:function(){
+             this.$tabs =  $('footer>div');
+             this.$panels = $('section');
+             this.bind();
+            
+            // 初始化的时候，top250页面就出现
+             top250.init();
+             usBox.init();
+             search.init();
+         },
+         bind:function(){
+             var _this = this;
+             this.$tabs.on('click',function(){
+                 $(this).addClass('active').siblings().removeClass('active');
+                _this.$panels.eq($(this).index()).fadeIn().siblings().hide()
+             })
+         }   
+       }
+       
+       app.init();
+    </script>
+</body>
+
+</html>

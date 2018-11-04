@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>豆瓣电影</title>
+    <link rel="stylesheet" href="http://at.alicdn.com/t/font_896502_ryjooqh02pn.css">
+    <script src="https://cdn.bootcss.com/jquery/2.1.0-rc1/jquery.min.js"></script>
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing: border-box;
+        }
+        a{
+            text-decoration: none;
+            color:#333;
+        }
+        html,body{
+            height:100%;
+        }
+        body {
+            font-size: 12px;
+            line-height: 1.2;
+            background-color: #fff;
+            position: relative;
+        }
+        main{
+            height:calc(100vh - 50px);
+            /* 在main里滚动 */
+            overflow: scroll;  
+            /* 具有回弹效果的滚动，也就是说，当手指离开触摸屏，内容会继续保持一段时间的滚动*/
+            -webkit-overflow-scrolling:touch;  
+        }
+        footer{
+            position: absolute;
+            bottom:0;
+            height:50px;
+            width:100%;
+            display: flex;
+            border-top:1px solid #ccc;
+        }
+        footer>div{
+            flex:1;
+            text-align: center;
+        }
+        footer .active {
+            color:#ff5572;
+        }
+        footer>div>span{
+            display: block;
+            padding-top:5px;
+        }
+        main>section{
+            display: none;
+        }
+        main>section:first-child{
+            display: block;
+        }
+        .item{
+            border-bottom:1px solid #ccc;
+            padding-top:10px;
+            padding-bottom:10px;
+        }
+        .item>a{
+            display: block;
+            display:flex;
+        }
+        .item .cover,
+        .item img {
+            width:70px;
+        }
+        .item .detail{
+            flex:1;
+            padding-left:10px;
+        }
+        .item .detail h2{
+            font-size: 16px;
+        }
+        .item .detail .extra {
+            color:#999;
+            margin-top:4px;
+        }
+        .item .detail .score{
+            color:#ff5572;
+        }
+        .loading {
+            padding:5px;
+            text-align: center;
+            display: none;
+        }
+        .loading .iconfont{
+            /* 使用动画的话，必须是块 */
+            display: inline-block;
+            animation: 1s  rotate linear infinite;
+        }
+        /* 动画关键帧 */
+        @keyframes rotate {
+            0% {transform: rotate(0deg)}
+            100% {transform: rotate(360deg)}
+        }
+    
+    </style>
+</head>
+<body>
+        <!-- 
+            原始的方法
+
+         -->
+
+    <main>
+        <section>
+            <div id="top250">
+                <!-- <div class="item">
+                        <a href="#">
+                            <div class="cover">
+                                <img src="https://ss0.bdstatic.com/70cFvHSh_Q1YnxGkpoWK1HF6hhy/it/u=4199764235,3986498099&fm=26&gp=0.jpg" alt="">
+                            </div>
+                            <div class="detail">
+                                <h2>霸王别姬</h2>
+                                <div class="extra"><span class="score">9.3分</span> /<span class="collect"></span>收藏</div>
+                                <div class="extra"><span class="year">1994</span> /<span class="type">剧情、爱情</span></div>
+                                <div class="extra">导演：<span class="director">张艺谋</span></div>
+                                <div class="extra">主演：<span class="actor">张艺谋、张艺谋、张艺谋</span></div>
+                            </div>
+                        </a>
+                    </div> -->
+            </div>
+            <div class="loading"><span class="iconfont icon-loading"></span></div>
+        </section>
+        <section>2</section>
+        <section>3</section>
+    </main>
+    <footer>
+        <div class="active"><span class="iconfont icon-top250"></span><span>Top250</span></div>
+        <div><span class="iconfont icon-us"></span><span>北美</span></div>
+        <div><span class="iconfont icon-search"></span>搜索<span></span></div>
+    </footer>
+
+    <script>
+        $('footer>div').on('click',function(){
+            var index = $(this).index();
+            $('main>section').hide().eq(index).fadeIn();
+            $(this).addClass('active').siblings().removeClass('active');
+        })
+
+        var index = 0;
+
+        // 这个变量表示加载状态，初始是加载完毕状态，true是正在加载状态
+        var isLoading = false;
+        
+        // 一开始的时候发送一次请求。
+        start();
+        function start(){
+            // 数据加锁，当正在加载数据的时候，就不会再发请求
+            if(isLoading) return;
+            isLoading = true;
+            $('.loading').show();
+             $.ajax({
+                url: 'http://api.douban.com/v2/movie/top250',
+                type: 'GET',
+                data: {
+                    start: index,
+                    count: 20
+                },
+                dataType: 'jsonp'
+            }).done(function (ret) {
+                console.log(ret);
+                setData(ret);
+                index +=20;
+            }).fail(function () {
+                console.log('error ...');
+            }).always(function(){
+                // 当数据加载完毕，加载完毕
+                isLoading = false;
+                $('.loading').hide();
+            })
+        }
+        
+        // 滚动到底部的时候再发送一次请求，这个时候index已经是20了
+        // 避免下滚的时候，发送多次请求的方法，除了刚才的数据加锁之外，还有一个就是数据节流
+        var clock;
+        $('main').scroll(function(){
+            // 刚开始的时候，clock是没有值的，是undefined，然后执行下边setTimeout,300毫秒内，如果又发生了stat()，那么就会清楚上一次的请求
+            // 只执行多次请求中的最后一次
+            if(clock){
+                clearTimeout(clock);
+            }
+            clock = setTimeout(function(){
+                if ($('section').eq(0).height() - 10 <= $('main').height() + $('main').scrollTop()) {
+                    start();
+                }
+            },300)
+        })
+        
+        function setData(data){
+            data.subjects.forEach(function(movie){
+                // 如何在页面生成大段的字符串
+                var tpl = `<div class="item">
+                <a href="#">
+                    <div class="cover">
+                        <img src="" alt="">
+                    </div>
+                    <div class="detail">
+                        <h2></h2>
+                        <div class="extra"><span class="score"></span> /<span class="collect"></span>收藏</div>
+                        <div class="extra"><span class="year"></span> /<span class="type"></span></div>
+                        <div class="extra">导演：<span class="director"></span></div>
+                        <div class="extra">主演：<span class="actor"></span></div>
+                    </div>
+                </a>
+            </div>`
+                var $node = $(tpl);
+                $node.find('.cover img').attr('src',movie.images.medium);
+                $node.find('.detail h2').text(movie.title);
+                $node.find('.detail .score').text(movie.rating.average);
+                $node.find('.collect').text(movie.collect_count);
+                $node.find('.year').text(movie.year);
+                $node.find('.type').text(movie.genres.join('/'));
+                $node.find('.director').text(function(){
+                    var directorArr = [];
+                    movie.directors.forEach(function(item){
+                        directorArr.push(item.name);
+                    })
+                    return directorArr.join('、');
+                });
+                $node.find('.actor').text(function(){
+                    var actorArr = [];
+                    movie.casts.forEach(function(item){
+                        actorArr.push(item.name);
+                    })
+                    return actorArr.join('、');
+                })
+                $('#top250').append($node);
+            })
+        }
+    
+    </script>
+</body>
+</html>
