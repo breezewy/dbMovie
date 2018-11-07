@@ -83,7 +83,7 @@
                _this.isLoading = true;     //如果已经加载完毕，就设置为true
                _this.$container.find('.loading').show();
               $.ajax({
-                  url:'http://api.douban.com/v2/movie/top250',
+                  url:'https://api.douban.com/v2/movie/top250',
                   data:{
                       start:this.index||0,
                   },
@@ -126,7 +126,7 @@
                 var _this = this;
                  _this.$container.find('.loading').show();
                 $.ajax({
-                    url: 'http://api.douban.com/v2/movie/us_box',
+                    url: 'https://api.douban.com/v2/movie/us_box',
                     dataType: 'jsonp'
                 }).done(function (ret) {
                     callback && callback(ret);
@@ -171,7 +171,7 @@
                     var _this = this;
                      _this.$container.find('.loading').show();
                     $.ajax({
-                        url:'http://api.douban.com/v2/movie/search',
+                        url:'https://api.douban.com/v2/movie/search',
                         data:{
                             q:_this.keyword
                         },
